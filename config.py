@@ -6,9 +6,9 @@ WIFI_PASS = '3c9066cfebc0'
 # AWS general configuration
 AWS_PORT = 8883
 AWS_HOST = 'am771eam97wll-ats.iot.us-east-1.amazonaws.com'
-AWS_ROOT_CA = '/flash/cert/AmazonRootCA3.pem' #'/flash/cert/aws_root.ca'
-AWS_CLIENT_CERT = '/flash/cert/191a5cf3913fbbfe605be0888b1e6fd62367c7d0e5a2450a68fade499e356191-certificate.pem.crt'#'/flash/cert/aws_client.cert'
-AWS_PRIVATE_KEY = '/flash/cert/191a5cf3913fbbfe605be0888b1e6fd62367c7d0e5a2450a68fade499e356191-private.pem.key'
+AWS_ROOT_CA = '/flash/cert/AmazonRootCA1.pem' #'/flash/cert/aws_root.ca'
+AWS_CLIENT_CERT = '/flash/cert/certificate.pem.crt'#'/flash/cert/aws_client.cert'
+AWS_PRIVATE_KEY = '/flash/cert/private.pem.key'
 
 ################## Subscribe / Publish client #################
 CLIENT_ID = 'PycomPublishClient'
@@ -37,3 +37,6 @@ LAST_WILL_MSG = 'To All: Last will message'
 # CLIENT_ID = "ShadowEcho"
 # CONN_DISCONN_TIMEOUT = 10
 # MQTT_OPER_TIMEOUT = 5
+
+
+# arn:aws:iot:us-east-1:059831388641:thing/MoradPycom2
