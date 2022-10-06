@@ -2,3 +2,5 @@
 /cert/*.pem
 /cert/*.key
 /cert/*.crt
+config.py
+.DS_Store
