@@ -13,11 +13,7 @@ import json
 from MQTTLib import AWSIoTMQTTShadowClient
 from MQTTLib import AWSIoTMQTTClient
 
-from network import MDNS
-MDNS.init()
-MDNS.set_name(hostname ="pycom", instance_name="pycom")
-MDNS.add_service("_http",MDNS.PROTO_TCP, 80)
-MDNS.add_service("_telnetd", MDNS.PROTO_TCP, 23)
+
 
 # Connect to wifi
 # wlan = WLAN(mode=WLAN.STA)
@@ -60,9 +56,7 @@ pycomAwsMQTTClient.configureConnectDisconnectTimeout(config.CONN_DISCONN_TIMEOUT
 pycomAwsMQTTClient.configureMQTTOperationTimeout(config.MQTT_OPER_TIMEOUT)
 pycomAwsMQTTClient.configureLastWill(config.LAST_WILL_TOPIC, config.LAST_WILL_MSG, 1)
 
-pycomAwsMQTTClient.DEBUG = True
-##pycomAwsMQTTClient.set_callback(sub_cb)
-#pycomAwsMQTTClient.settimeout = settimeout
+
 pycomAwsMQTTClient.connect()
 
 #Connect to MQTT Host
@@ -81,15 +75,3 @@ while loopCount < 8:
 	pycomAwsMQTTClient.publish(config.TOPIC, "New Message " + str(loopCount), 1)
 	loopCount += 1
 	time.sleep(5.0)
-# while True:    
-#     #JSONPayload = '{"state":{"desired":{"property":' + str(loopCount) + '}}}'
-#     #deviceShadowHandler.shadowUpdate(JSONPayload, customShadowCallback_Update, 5)
-#     #print('\nvoltage: {}, lumen: {}, lux: {}'.format(voltage, light, lux))
-#     print("Sending Voltage: ", 'voltage')
-#     print("Sending lumen: ", 'LIGHTMess')
-#     print("Sending Lux: ", 'LUXMess')
-#     #pycom.rgbled(0x00FF00) # Green
-#     pycomAwsMQTTClient.publish(config.TOPIC, str('voltage'), 1)
-#     pycomAwsMQTTClient.publish(config.TOPIC, str('LIGHTMess'), 1)
-#     pycomAwsMQTTClient.publish(config.TOPIC, str('LUXMess'), 1)
-#     time.sleep(5)
