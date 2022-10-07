@@ -1,11 +1,15 @@
 from MQTTLib import AWSIoTMQTTClient
 from network import WLAN
 import time
+import utime
 import config
 import pycom
 from mqtt import MQTTClient
 import socket
 import machine
+import micropython
+from machine import RTC
+
 
 
 import config
@@ -13,7 +17,17 @@ import json
 from MQTTLib import AWSIoTMQTTShadowClient
 from MQTTLib import AWSIoTMQTTClient
 
+from network import LoRa
+import ubinascii
 
+from pycoproc_1 import Pycoproc
+from LIS2HH12 import LIS2HH12
+from SI7006A20 import SI7006A20
+from LTR329ALS01 import LTR329ALS01
+from MPL3115A2 import MPL3115A2,ALTITUDE,PRESSURE
+
+from network import LoRa
+import ubinascii
 
 # Connect to wifi
 # wlan = WLAN(mode=WLAN.STA)
@@ -22,12 +36,22 @@ from MQTTLib import AWSIoTMQTTClient
 #     time.sleep(0.5)
 # print('WLAN connection succeeded!')
 
+# RGBLED
+# Disable the on-board heartbeat (blue flash every 4 seconds)
+# We'll use the LED to respond to messages from Adafruit IO
+pycom.heartbeat(False)
+time.sleep(0.1) # Workaround for a bug.
+                # Above line is not actioned if another
+                # process occurs immediately afterwards
+pycom.rgbled(0xff0000)  # Status red = not working
+
 # Connect to wifi to get time
 wlan = WLAN(mode=WLAN.STA)
 wlan.connect(config.WIFI_SSID, auth=(None, config.WIFI_PASS), timeout=50000)
+pycom.rgbled(0xffd7000)
 #wlan.connect(ssid='F107', auth=(WLAN.WPA2, 'Champlain@2022'))
 while not wlan.isconnected():
-	pass
+	pycom.rgbled(0xff0000) 
 	#time.sleep(2)
     #machine.idle()
 print('\n')
@@ -35,6 +59,22 @@ print("WiFi connected succesfully to: ")
 print(wlan.ifconfig()) # Print IP configuration
 #pycom.rgbled(0xFFFF00) # Yellow
 time.sleep(5)
+
+#RTC timestamp current time syncing to get the current date and time
+rtc = RTC()
+#syncing the rtc to the server
+print("Syncing RTC to NTP...")
+rtc = RTC()
+rtc.ntp_sync("pool.ntp.org", update_period=3600)
+while not rtc.synced():
+    pass # save power while waiting
+print(rtc.now())
+#local_time = utc + timezone
+time.timezone(-4*60**2)
+print(time.localtime())
+currenttime = time.localtime()
+mytime = (str(time.localtime()[0]) + '-' + str(time.localtime()[1]) + '-' + str(time.localtime()[2]) + ' ' + str(time.localtime()[3]) + ':' + str(time.localtime()[4]) +':' + str(time.localtime()[5]))
+print(mytime)
 
 
 # user specified callback function
@@ -57,11 +97,13 @@ pycomAwsMQTTClient.configureMQTTOperationTimeout(config.MQTT_OPER_TIMEOUT)
 pycomAwsMQTTClient.configureLastWill(config.LAST_WILL_TOPIC, config.LAST_WILL_MSG, 1)
 
 
-pycomAwsMQTTClient.connect()
+#pycomAwsMQTTClient.connect()
 
 #Connect to MQTT Host
 if pycomAwsMQTTClient.connect():
-    print('AWS connection succeeded')
+	pycom.rgbled(0x00ff00)
+	print('AWS connection succeeded')
+	
 elif (not pycomAwsMQTTClient.connect()):
 	print('AWS is not connected')
 
@@ -69,9 +111,50 @@ elif (not pycomAwsMQTTClient.connect()):
 pycomAwsMQTTClient.subscribe(config.TOPIC, 1, customCallback)
 time.sleep(2)
 
+#collect sensors data
+## read sensors data on pysense
+py = Pycoproc(Pycoproc.PYSENSE)
+
+# Temperature 
+mp = MPL3115A2(py,mode=ALTITUDE) # Returns height in meters. Mode may also be set to PRESSURE, returning a value in Pascals
+temperature = mp.temperature() # setting the data sensor to the varible
+print("MPL3115A2 temperature: " + str(mp.temperature()))
+#humidity
+si = SI7006A20(py)
+humidity = si.humidity()
+print("Temperature: " + str(si.temperature())+ " deg C and Relative Humidity: " + str(si.humidity()) + " %RH")
+
+#temperatue
+temperature2 = si.temperature()
+lora = LoRa()
+print("DevEUI: %s" % (ubinascii.hexlify(lora.mac()).decode('ascii')))
+device_id = ubinascii.hexlify(lora.mac()).decode('ascii')
+#light sensor
+li = LTR329ALS01(py)
+print("Light (channel Blue lux, channel Red lux): " + str(li.light()))
+#accelerometer
+acc = LIS2HH12(py)
+print("Acceleration: " + str(acc.acceleration()))
+print("Roll: " + str(acc.roll()))
+print("Pitch: " + str(acc.pitch()))
+#volatge
+print("Battery voltage: " + str(py.read_battery_voltage()))
+voltage = py.read_battery_voltage()
+roll = acc.roll()
+pitch = acc.pitch()
+
 # Send message to host
 loopCount = 0
+
+
+value = 8.5
 while loopCount < 8:
-	pycomAwsMQTTClient.publish(config.TOPIC, "New Message " + str(loopCount), 1)
+	payload=json.dumps({"device_id": device_id,"temperature":  si.temperature(),"humidity": si.humidity(),"voltage":py.read_battery_voltage(),"roll":acc.roll(), "pitch": acc.pitch(), "timestamp":(str(time.localtime()[0]) + '-' + str(time.localtime()[1]) + '-' + str(time.localtime()[2]) + ' ' + str(time.localtime()[3]) + ':' + str(time.localtime()[4]) +':' + str(time.localtime()[5]))})
+	print(payload)
+	mytopic = config.TOPIC +'/'+ device_id +'/aggregate'
+	pycomAwsMQTTClient.publish(mytopic, payload, 1)
+	pycom.heartbeat(True)
 	loopCount += 1
 	time.sleep(5.0)
+
+pycom.rgbled(0xff0000)

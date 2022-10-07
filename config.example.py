@@ -5,7 +5,7 @@ WIFI_PASS = 'WIFI password'
 
 # AWS general configuration
 AWS_PORT = 8883
-AWS_HOST = 'exanple.us-east-1.amazonaws.com'
+AWS_HOST = 'example.us-east-1.amazonaws.com'
 AWS_ROOT_CA = '/flash/cert/AmazonRootCA1.pem' 
 AWS_CLIENT_CERT = '/flash/cert/certificate.pem.crt'
 AWS_PRIVATE_KEY = '/flash/cert/private.pem.key'
